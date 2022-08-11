@@ -2,7 +2,7 @@ use std::convert::TryInto;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::error::Error;
-use crate::raw::request::{ListenType, Payload, SubmitListens, TrackMetadata};
+use crate::raw::request::{AdditionalInfo, ListenType, Payload, SubmitListens, TrackMetadata};
 use crate::raw::Client;
 
 /// Contains a ListenBrainz token and the associated username
@@ -90,6 +90,7 @@ impl ListenBrainz {
         artist: &str,
         track: &str,
         release: Option<&str>,
+        info: Option<&AdditionalInfo>,
     ) -> Result<(), Error> {
         let token = self.authenticated_token().ok_or(Error::NotAuthenticated)?;
 
@@ -99,7 +100,7 @@ impl ListenBrainz {
                 artist_name: artist,
                 track_name: track,
                 release_name: release,
-                additional_info: None,
+                additional_info: info,
             },
         };
 
@@ -122,7 +123,13 @@ impl ListenBrainz {
     /// If not authenticated, returns [`Error::NotAuthenticated`].
     /// Otherwise, see the Errors section of [`Client`] for more info on
     /// what errors might occur.
-    pub fn listen(&self, artist: &str, track: &str, release: Option<&str>) -> Result<(), Error> {
+    pub fn listen(
+        &self,
+        artist: &str,
+        track: &str,
+        release: Option<&str>,
+        additional_info: Option<&AdditionalInfo>,
+    ) -> Result<(), Error> {
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
@@ -130,7 +137,14 @@ impl ListenBrainz {
             .try_into()
             .unwrap();
 
-        self.submit_listen(ListenType::Single, Some(now), artist, track, release)
+        self.submit_listen(
+            ListenType::Single,
+            Some(now),
+            artist,
+            track,
+            release,
+            additional_info,
+        )
     }
 
     /// Submit a listened track with the given listen time, intended for importing
@@ -147,8 +161,16 @@ impl ListenBrainz {
         track: &str,
         release: Option<&str>,
         timestamp: i64,
+        additional_info: Option<&AdditionalInfo>,
     ) -> Result<(), Error> {
-        self.submit_listen(ListenType::Import, Some(timestamp), artist, track, release)
+        self.submit_listen(
+            ListenType::Import,
+            Some(timestamp),
+            artist,
+            track,
+            release,
+            additional_info,
+        )
     }
 
     /// Submit a currently playing track. This requires authentication.
@@ -163,8 +185,16 @@ impl ListenBrainz {
         artist: &str,
         track: &str,
         release: Option<&str>,
+        additional_info: Option<&AdditionalInfo>,
     ) -> Result<(), Error> {
-        self.submit_listen(ListenType::PlayingNow, None, artist, track, release)
+        self.submit_listen(
+            ListenType::PlayingNow,
+            None,
+            artist,
+            track,
+            release,
+            additional_info,
+        )
     }
 }
 

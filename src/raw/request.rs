@@ -12,7 +12,7 @@ use serde::Serialize;
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]
 pub struct SubmitListens<'a, Track: StrType, Artist: StrType = Track, Release: StrType = Track> {
     pub listen_type: ListenType,
-    pub payload: &'a [Payload<Track, Artist, Release>],
+    pub payload: &'a [Payload<'a, Track, Artist, Release>],
 }
 
 /// Type of the [`SubmitListens::listen_type`] field.
@@ -26,25 +26,38 @@ pub enum ListenType {
 
 /// Type of the [`SubmitListens::payload`] field.
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]
-pub struct Payload<Track: StrType, Artist: StrType = Track, Release: StrType = Track> {
+pub struct Payload<'a, Track: StrType, Artist: StrType = Track, Release: StrType = Track> {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub listened_at: Option<i64>,
-    pub track_metadata: TrackMetadata<Track, Artist, Release>,
+    pub track_metadata: TrackMetadata<'a, Track, Artist, Release>,
 }
 
 /// Type of the [`Payload::track_metadata`] field.
 ///
 /// If [`release_name`](Self::release_name) will always be [None] and the type for `Release` cannot be inferred, set it to the [Empty] type.
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]
-pub struct TrackMetadata<Track: StrType, Artist: StrType = Track, Release: StrType = Track> {
+pub struct TrackMetadata<'a, Track: StrType, Artist: StrType = Track, Release: StrType = Track> {
     pub track_name: Track,
     pub artist_name: Artist,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub release_name: Option<Release>,
 
+    pub additional_info: Option<&'a AdditionalInfo>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
+pub struct AdditionalInfo {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub artist_mbids: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub additional_info: Option<serde_json::Map<String, serde_json::Value>>,
+    pub release_mbid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recording_mbid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub work_mbid: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub track_mbid: Option<String>,
 }
 
 // --------- delete-listen
